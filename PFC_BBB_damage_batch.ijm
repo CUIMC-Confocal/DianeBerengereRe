@@ -66,6 +66,7 @@ while (nImages > 0) { // clean up open images
 	close(); 
 }
 setBatchMode(false);
+run("Clear Results");
 elapsedTime = (getTime() - startTime)/1000;
 print("Finished in",elapsedTime,"seconds"); 
 
@@ -118,7 +119,10 @@ function processFile(inputFolder, outputFolder, fileName, fileNumber, resultsFil
 
 	// ---- Define vessel area using channel 3 ----
 	
-	selectWindow("C3-"+fileName);
+	selectWindow("C3-" + fileName);
+	copyName = "C3-" + fileName + "_copy";
+	run("Duplicate...", "title="+copyName);
+	selectWindow(copyName);
 	run("Gaussian Blur...", "sigma=2"); // smooth the image to get a cleaner segmentation
 	run("Auto Threshold", "method=Huang white"); 
 	run("Analyze Particles...", "size=20.00-Infinity show=Nothing clear add"); // excludes objects < 20 µm2 and adds to ROI manager
@@ -131,11 +135,13 @@ function processFile(inputFolder, outputFolder, fileName, fileNumber, resultsFil
 	roiManager("combine");
 	roiManager("add"); // add the combined ROI to the manager
 	roiManager("deselect");
+	roiManager("show none");
 	roiManager("select", numRois); // this is the last ROI
 	
 	roisToDelete = Array.getSequence(numRois);
 	roiManager("select", roisToDelete);
 	roiManager("delete"); // delete the individual vessel "particles" and keep the combined one
+	Overlay.remove; // clear out the overlay from the other ROIs
 
 	// ---- Measure intensity in channel 2 ----
 	
@@ -145,16 +151,13 @@ function processFile(inputFolder, outputFolder, fileName, fileNumber, resultsFil
 	roiManager("deselect");
 	run("Select All");
 	run("Measure");
-	//print("After measuring whole image",fileNumber," we have", nResults, "results");
+
 	mode = getResult("Mode", nResults-1); // we'll add this to the results table later
 	print("Mode of the image is",mode);
-	//IJ.deleteRows( nResults-1, nResults-1 ); // delete the last row of the results table while preserving the rest
-	//print("After deleting whole image data from image",fileNumber," we have", nResults, "results");
-	
+
 	// measure the vessel area; use for measuring junction intensity
 	roiManager("select", 0); // indices start at 0 and we should have only 1 ROI now
 	run("Measure");
-	//print("After measuring vessels in image",fileNumber,"we have", nResults, "results");
 		
 	// add the image mode to the results
 	setResult("WholeImageMode", nResults-1, mode);
@@ -163,14 +166,14 @@ function processFile(inputFolder, outputFolder, fileName, fileNumber, resultsFil
 	headings = split(String.getResultsHeadings);
 	row = nResults - 1;
 	label = getResultString("Label",row); // required for non-numeric columns
-	print("Label is",label);
+	//print("Label is",label);
 	resultString = label;
 	for (a=1; a<lengthOf(headings); a++) {
 		head = headings[a];
 		val = getResult(head, row);
-		print("Retrieving heading",head,"with result", val);
+		//print("Retrieving heading",head,"with result", val);
 	    resultString = resultString + "," + val;
-	    print("Result string is",resultString);
+	    //print("Result string is",resultString);
 	}
 		
 	// ---- Save data ----
@@ -183,9 +186,11 @@ function processFile(inputFolder, outputFolder, fileName, fileNumber, resultsFil
 	roiManager("save", outputFolder +  File.separator + roiName);
 	snapName = basename + "_snapshot.png";
 	selectWindow("C3-"+fileName);
+	run("Enhance Contrast", "saturated=0.35"); // Same as Auto B&C -- for visualization
 	roiManager("show none");
-	roiManager("select", 0); // this is the last ROI
-	run("Flatten");
+	roiManager("show all without labels");
+	//roiManager("select", 0); // this is the last ROI
+	run("Flatten"); // creates an RGB image including the ROI line
 	selectWindow("C3-"+basename + "-1" + extension);
 	saveAs("png", outputFolder + File.separator + snapName);
 
