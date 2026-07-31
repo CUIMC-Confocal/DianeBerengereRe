@@ -36,6 +36,9 @@ run("Bio-Formats Macro Extensions"); // support native microscope files
 run("Set Measurements...", "area mean modal integrated display redirect=None decimal=3");
 run("Input/Output...", "jpeg=85 gif=-1 file=.csv copy_row save_column save_row");
 
+run("Options...", "iterations=1 count=1 black"); // ensure that black is interpreted as background
+
+
 // get date and time for timestamped results
 getDateAndTime(year, month, dayOfWeek, dayOfMonth, hour, minute, second, msec);
 startTime = getTime();
