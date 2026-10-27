@@ -31,7 +31,7 @@ while (nImages>0) { // clean up open images
 run("Clear Results");
 print("\\Clear"); // clear Log window
 roiManager("reset");
-//setBatchMode(true); // faster performance
+//setBatchMode(true); // faster performance but interferes with snapshot of composite
 run("Bio-Formats Macro Extensions"); // support native microscope files
 run("Set Measurements...", "area mean modal integrated display redirect=None decimal=3");
 run("Input/Output...", "jpeg=85 gif=-1 file=.csv copy_row save_column save_row");
@@ -328,6 +328,7 @@ function processFile(inputFolder, outputFolder, fileName, fileNumber, vesselChan
 	overlapSnap = basename + "_overlap_snapshot.png";
 	run("Bio-Formats", "open=&path");
 	selectWindow(fileName);
+	rename("orig");
 	Stack.setDisplayMode("composite");
 	Property.set("CompositeProjection", "Sum");
 	roiManager("Show All without labels");
@@ -335,7 +336,7 @@ function processFile(inputFolder, outputFolder, fileName, fileNumber, vesselChan
 	overlapRoi = findRoiWithName("overlap");
 	roiManager("select", overlapRoi);
 	run("Flatten"); // creates an RGB image including the ROI 
-	flatOverlapName = basename + "-1" + extension;
+	flatOverlapName = "orig-1";
 	selectWindow(flatOverlapName);
 	saveAs("png", outputFolder + File.separator + overlapSnap);
 
